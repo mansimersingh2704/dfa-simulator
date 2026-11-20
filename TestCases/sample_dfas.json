@@ -1,0 +1,104 @@
+{
+  "test_suites": [
+    {
+      "id": "ends_with_01",
+      "name": "Strings ending with '01'",
+      "description": "Accepts any binary string over {0, 1} that ends with '01'.",
+      "dfa": {
+        "states": ["q0", "q1", "q2"],
+        "alphabet": ["0", "1"],
+        "start_state": "q0",
+        "accepting_states": ["q2"],
+        "transitions": {
+          "q0": {"0": "q1", "1": "q0"},
+          "q1": {"0": "q1", "1": "q2"},
+          "q2": {"0": "q1", "1": "q0"}
+        }
+      },
+      "test_cases": [
+        {"input": "01", "expected": true},
+        {"input": "101", "expected": true},
+        {"input": "1001", "expected": true},
+        {"input": "00", "expected": false},
+        {"input": "10", "expected": false},
+        {"input": "111", "expected": false},
+        {"input": "", "expected": false}
+      ]
+    },
+    {
+      "id": "contains_101",
+      "name": "Strings containing '101'",
+      "description": "Accepts any binary string containing '101' as a substring.",
+      "dfa": {
+        "states": ["s0", "s1", "s2", "s3"],
+        "alphabet": ["0", "1"],
+        "start_state": "s0",
+        "accepting_states": ["s3"],
+        "transitions": {
+          "s0": {"0": "s0", "1": "s1"},
+          "s1": {"0": "s2", "1": "s1"},
+          "s2": {"0": "s0", "1": "s3"},
+          "s3": {"0": "s3", "1": "s3"}
+        }
+      },
+      "test_cases": [
+        {"input": "101", "expected": true},
+        {"input": "01010", "expected": true},
+        {"input": "1101", "expected": true},
+        {"input": "1001", "expected": false},
+        {"input": "111", "expected": false},
+        {"input": "000", "expected": false},
+        {"input": "", "expected": false}
+      ]
+    },
+    {
+      "id": "even_zeros",
+      "name": "Even number of 0s",
+      "description": "Accepts binary strings with an even count of '0's.",
+      "dfa": {
+        "states": ["q_even", "q_odd"],
+        "alphabet": ["0", "1"],
+        "start_state": "q_even",
+        "accepting_states": ["q_even"],
+        "transitions": {
+          "q_even": {"0": "q_odd", "1": "q_even"},
+          "q_odd": {"0": "q_even", "1": "q_odd"}
+        }
+      },
+      "test_cases": [
+        {"input": "", "expected": true},
+        {"input": "00", "expected": true},
+        {"input": "11", "expected": true},
+        {"input": "010", "expected": true},
+        {"input": "1", "expected": true},
+        {"input": "0", "expected": false},
+        {"input": "0110", "expected": true}
+      ]
+    },
+    {
+      "id": "divisible_by_3",
+      "name": "Binary number divisible by 3",
+      "description": "Accepts binary strings representing integers divisible by 3.",
+      "dfa": {
+        "states": ["r0", "r1", "r2"],
+        "alphabet": ["0", "1"],
+        "start_state": "r0",
+        "accepting_states": ["r0"],
+        "transitions": {
+          "r0": {"0": "r0", "1": "r1"},
+          "r1": {"0": "r2", "1": "r0"},
+          "r2": {"0": "r1", "1": "r2"}
+        }
+      },
+      "test_cases": [
+        {"input": "0", "expected": true},
+        {"input": "11", "expected": true},
+        {"input": "110", "expected": true},
+        {"input": "1001", "expected": true},
+        {"input": "1", "expected": false},
+        {"input": "10", "expected": false},
+        {"input": "100", "expected": false}
+      ]
+    }
+  ]
+}

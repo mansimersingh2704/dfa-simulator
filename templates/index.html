@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DFA Simulator — CSET302 Automata Theory</title>
+  <link rel="stylesheet" href="/static/style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+  <!-- Header / Navigation -->
+  <header class="app-header">
+    <div class="header-container">
+      <div class="brand">
+        <div class="brand-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <circle cx="12" cy="12" r="9"></circle>
+            <circle cx="12" cy="12" r="5"></circle>
+            <path d="M12 3v4M12 17v4M3 12h4M17 12h4"></path>
+          </svg>
+        </div>
+        <div class="brand-text">
+          <h1>DFA Simulator</h1>
+          <span class="course-badge">CSET302: Automata Theory &amp; Computability</span>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <!-- Backend Status Badge -->
+        <div id="engine-status" class="status-pill online" title="Connectivity status">
+          <span class="status-dot"></span>
+          <span id="engine-status-text">Backend Connected</span>
+        </div>
+
+        <!-- Dark / Light Theme Toggle -->
+        <button id="theme-toggle" class="btn btn-icon" title="Toggle Dark / Light Mode" aria-label="Toggle theme">
+          <span class="theme-icon light-icon">☀️</span>
+          <span class="theme-icon dark-icon">🌙</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Hero Section -->
+  <section class="hero-section">
+    <div class="hero-content">
+      <h2 class="hero-title">Deterministic Finite Automaton Studio</h2>
+      <p class="hero-subtitle">
+        Design, validate, and simulate Deterministic Finite Automata with an interactive visual graph editor and step-by-step tape execution.
+      </p>
+      <div class="hero-formal-spec">
+        <span class="spec-label">Formal Definition:</span>
+        <code>M = (Q, Σ, δ, q₀, F)</code>
+      </div>
+    </div>
+  </section>
+
+  <!-- Main Container -->
+  <main class="app-main">
+    <!-- Top Toolbar: Presets & Reset -->
+    <div class="global-toolbar card">
+      <div class="toolbar-group">
+        <label for="preset-select" class="toolbar-label">
+          <strong>Demonstration Presets:</strong>
+        </label>
+        <select id="preset-select" class="form-select">
+          <option value="ends_with_01" selected>Strings ending with '01'</option>
+          <option value="contains_101">Strings containing '101'</option>
+          <option value="even_zeros">Even number of 0s</option>
+          <option value="ends_with_1">Strings ending with '1'</option>
+          <option value="divisible_by_3">Binary number divisible by 3</option>
+          <option value="starts_and_ends_1">Starts and ends with '1'</option>
+        </select>
+        <button id="btn-load-preset" class="btn btn-secondary">Load Preset</button>
+      </div>
+
+      <div class="toolbar-group">
+        <button id="btn-clear-all" class="btn btn-outline btn-danger-outline">Clear DFA</button>
+      </div>
+    </div>
+
+    <!-- Active Preset Description Banner -->
+    <div id="preset-info-banner" class="info-banner card">
+      <div class="info-banner-header">
+        <span class="info-badge">Preset</span>
+        <strong id="preset-name">Strings ending with '01'</strong>
+      </div>
+      <p id="preset-desc">Accepts any binary string over {0, 1} that ends with '01'.</p>
+      <div class="sample-inputs-wrapper">
+        <span>Click to test sample input:</span>
+        <div id="preset-sample-chips" class="sample-chips"></div>
+      </div>
+    </div>
+
+    <!-- Workflow Cards (1. Define, 2. Build, 3. Simulate) -->
+    <div class="workflow-container">
+
+      <!-- =================================================================== -->
+      <!-- CARD 1: DEFINE (Formal 5-Tuple & Transition Matrix)                -->
+      <!-- =================================================================== -->
+      <section class="card workflow-card" id="card-define">
+        <div class="card-header">
+          <div class="step-indicator">
+            <span class="step-num">1</span>
+            <h3>Define DFA</h3>
+          </div>
+          <span class="card-subtitle">Formal Specification M = (Q, Σ, δ, q₀, F)</span>
+        </div>
+
+        <div class="card-body">
+          <form id="dfa-spec-form" class="spec-form" onsubmit="event.preventDefault();">
+            <div class="form-row">
+              <div class="form-group">
+                <label for="input-states">States <code>Q</code> (comma-separated)</label>
+                <input type="text" id="input-states" class="form-control" placeholder="q0, q1, q2" required />
+                <small class="form-hint">Set of state names.</small>
+              </div>
+
+              <div class="form-group">
+                <label for="input-alphabet">Alphabet <code>Σ</code> (comma-separated)</label>
+                <input type="text" id="input-alphabet" class="form-control" placeholder="0, 1" required />
+                <small class="form-hint">Input symbols recognized by the automaton.</small>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="input-start-state">Start State <code>q₀</code></label>
+                <input type="text" id="input-start-state" class="form-control" placeholder="q0" required />
+                <small class="form-hint">Initial state (must belong to Q).</small>
+              </div>
+
+              <div class="form-group">
+                <label for="input-accepting-states">Accepting States <code>F</code> (comma-separated)</label>
+                <input type="text" id="input-accepting-states" class="form-control" placeholder="q2" />
+                <small class="form-hint">Final states (subset of Q).</small>
+              </div>
+            </div>
+
+            <!-- Validation Feedback Banner -->
+            <div id="validation-alert" class="alert-box hidden">
+              <div class="alert-icon"></div>
+              <div class="alert-content">
+                <strong id="validation-title">Validation Status</strong>
+                <p id="validation-message"></p>
+              </div>
+            </div>
+
+            <!-- Transition Table Section -->
+            <div class="transitions-section">
+              <div class="transitions-header">
+                <h4>Transition Table <code>δ(q, σ)</code></h4>
+                <div class="btn-group-sm">
+                  <button type="button" id="btn-sync-definition" class="btn btn-primary btn-sm">
+                    Apply Changes
+                  </button>
+                  <button type="button" id="btn-validate" class="btn btn-outline btn-sm">
+                    Validate
+                  </button>
+                </div>
+              </div>
+
+              <div class="table-responsive">
+                <table id="transition-matrix-table" class="data-table transition-table">
+                  <thead></thead>
+                  <tbody></tbody>
+                </table>
+              </div>
+            </div>
+          </form>
+        </div>
+      </section>
+
+      <!-- =================================================================== -->
+      <!-- CARD 2: BUILD (Visual Interactive Graph Editor)                    -->
+      <!-- =================================================================== -->
+      <section class="card workflow-card" id="card-build">
+        <div class="card-header">
+          <div class="step-indicator">
+            <span class="step-num">2</span>
+            <h3>Visual Graph Editor</h3>
+          </div>
+          <div class="canvas-tools">
+            <button id="btn-auto-layout" class="btn btn-outline btn-xs" title="Auto arrange states">
+              Auto Layout
+            </button>
+          </div>
+        </div>
+
+        <div class="card-body">
+          <!-- Quick Add Toolbar -->
+          <div class="editor-subbar">
+            <!-- Add State -->
+            <div class="input-inline-group">
+              <input type="text" id="new-state-name" class="form-control form-control-sm" placeholder="State (e.g. q3)" style="max-width: 110px;" />
+              <button id="btn-add-state" class="btn btn-secondary btn-sm">+ State</button>
+            </div>
+
+            <!-- Add Transition -->
+            <div class="input-inline-group">
+              <select id="trans-source-select" class="form-select form-select-sm" title="From State"></select>
+              <input type="text" id="trans-symbol-input" class="form-control form-control-sm" placeholder="Sym" style="max-width: 55px;" />
+              <select id="trans-target-select" class="form-select form-select-sm" title="To State"></select>
+              <button id="btn-add-transition" class="btn btn-secondary btn-sm">+ Transition</button>
+            </div>
+          </div>
+
+          <!-- Canvas Workspace -->
+          <div class="canvas-wrapper" id="canvas-container">
+            <canvas id="dfa-canvas" width="800" height="380"></canvas>
+
+            <!-- Legend Overlay -->
+            <div class="canvas-legend">
+              <div class="legend-item"><span class="legend-swatch start-swatch"></span> Start State (→)</div>
+              <div class="legend-item"><span class="legend-swatch accept-swatch"></span> Accepting (Double Ring)</div>
+              <div class="legend-item"><span class="legend-swatch active-swatch"></span> Current Active State</div>
+            </div>
+
+            <!-- Selected State Action Panel -->
+            <div id="selection-panel" class="selection-panel hidden">
+              <span id="selected-state-label">Selected: <strong>q0</strong></span>
+              <button id="btn-toggle-start" class="btn btn-xs btn-outline">Set as Start</button>
+              <button id="btn-toggle-accept" class="btn btn-xs btn-outline">Toggle Final</button>
+              <button id="btn-delete-state" class="btn btn-xs btn-danger-outline">Delete</button>
+            </div>
+          </div>
+          <small class="canvas-instructions">
+            💡 Drag state circles to position them. Click a state to select it and edit or delete.
+          </small>
+        </div>
+      </section>
+
+      <!-- =================================================================== -->
+      <!-- CARD 3: SIMULATE (Interactive Tape Playback & Trace)                -->
+      <!-- =================================================================== -->
+      <section class="card workflow-card full-width" id="card-simulate">
+        <div class="card-header">
+          <div class="step-indicator">
+            <span class="step-num">3</span>
+            <h3>Simulate String</h3>
+          </div>
+          <span class="card-subtitle">Step-by-Step String Execution</span>
+        </div>
+
+        <div class="card-body">
+          <!-- Input Bar -->
+          <div class="sim-input-row">
+            <div class="sim-input-wrapper">
+              <label for="sim-input-string">Input String <code>w ∈ Σ*</code> (leave empty for empty string ε):</label>
+              <div class="input-with-button">
+                <input type="text" id="sim-input-string" class="form-control" placeholder="Enter string (e.g. 01, 1001, or empty for ε)" value="01" />
+                <button id="btn-sim-run" class="btn btn-primary">Run String</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Playback Controls -->
+          <div class="playback-controls">
+            <button id="btn-sim-reset" class="btn btn-outline btn-sm" title="Reset to start state">
+              ⏮ Reset
+            </button>
+            <button id="btn-sim-back" class="btn btn-outline btn-sm" title="Step backward">
+              ◀ Back
+            </button>
+            <button id="btn-sim-step" class="btn btn-secondary btn-sm" title="Step forward">
+              Step ▶
+            </button>
+            <button id="btn-sim-autoplay" class="btn btn-primary btn-sm" title="Automatic step-by-step playback">
+              ▶ Auto Play
+            </button>
+            <div class="speed-slider-group">
+              <label for="sim-speed">Speed:</label>
+              <input type="range" id="sim-speed" min="200" max="1500" value="650" step="50" title="Adjust playback speed" />
+            </div>
+          </div>
+
+          <!-- Input Tape Display -->
+          <div class="tape-container">
+            <div class="tape-label">Input Tape:</div>
+            <div id="tape-cells" class="tape-cells"></div>
+          </div>
+
+          <!-- Prominent Acceptance Verdict Banner -->
+          <div id="verdict-banner" class="verdict-banner ready">
+            <div class="verdict-status-badge">
+              <span id="verdict-badge-text">READY</span>
+            </div>
+            <div class="verdict-meta">
+              <div class="verdict-state">Current State: <strong id="verdict-current-state">q0</strong></div>
+              <div class="verdict-progress">Step: <span id="verdict-step-counter">0 / 0</span></div>
+            </div>
+          </div>
+
+          <!-- Explanation Panel -->
+          <div class="why-panel">
+            <div class="why-header">
+              <span class="why-icon">ℹ️</span>
+              <strong>Execution Explanation:</strong>
+            </div>
+            <p id="why-explanation-text">
+              Automaton is in start state 'q0'. Click Step or Run String to begin simulation.
+            </p>
+          </div>
+
+          <!-- Execution Trace Table -->
+          <div class="trace-section">
+            <div class="trace-header">
+              <h4>Simulation Step History</h4>
+            </div>
+            <div class="table-responsive trace-table-wrapper">
+              <table id="trace-table" class="data-table">
+                <thead>
+                  <tr>
+                    <th>Step</th>
+                    <th>Current State</th>
+                    <th>Input Symbol</th>
+                    <th>Next State</th>
+                    <th>Transition</th>
+                  </tr>
+                </thead>
+                <tbody id="trace-table-body">
+                  <tr><td colspan="5" class="empty-state">No simulation run yet.</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+
+    <!-- ===================================================================== -->
+    <!-- AI DFA CREATOR CARD                                                   -->
+    <!-- ===================================================================== -->
+    <section class="card ai-creator-card" id="card-ai-creator">
+      <div class="card-header">
+        <div class="step-indicator ai-step">
+          <span class="step-num ai-num">✦</span>
+          <h3>AI DFA Creator <span class="ai-badge">Groq AI</span></h3>
+        </div>
+        <span class="card-subtitle">Describe a language in plain English — Grok builds the DFA</span>
+      </div>
+
+      <div class="card-body">
+        <div class="ai-input-row">
+          <div class="ai-input-wrapper">
+            <label for="ai-description-input">
+              Describe the language <span class="ai-hint">(e.g. "accepts strings that start with 0 and end with 1")</span>
+            </label>
+            <div class="ai-input-group">
+              <textarea
+                id="ai-description-input"
+                class="form-control ai-textarea"
+                rows="3"
+                placeholder="Examples:&#10;• Accepts binary strings with an odd number of 1s&#10;• Accepts strings over {a, b} that start and end with the same symbol&#10;• Accepts binary strings whose length is divisible by 3"
+              ></textarea>
+              <button id="btn-ai-create" class="btn btn-ai">
+                <span id="ai-btn-text">✦ Generate DFA</span>
+                <span id="ai-spinner" class="ai-spinner hidden"></span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Example chips -->
+        <div class="ai-examples">
+          <span class="ai-examples-label">Quick examples:</span>
+          <button class="ai-example-chip" data-prompt="Binary strings with an odd number of 1s">Odd number of 1s</button>
+          <button class="ai-example-chip" data-prompt="Binary strings whose length is divisible by 2">Length divisible by 2</button>
+          <button class="ai-example-chip" data-prompt="Binary strings that do not contain '00' as a substring">No '00' substring</button>
+          <button class="ai-example-chip" data-prompt="Strings over {a, b} that start and end with the same symbol">Start = End symbol</button>
+          <button class="ai-example-chip" data-prompt="Binary strings representing a number divisible by 2 (i.e. ending in 0)">Number divisible by 2</button>
+        </div>
+
+        <!-- AI Result Panel (hidden until response) -->
+        <div id="ai-result-panel" class="ai-result-panel hidden">
+          <div class="ai-result-header">
+            <span class="ai-result-icon">🤖</span>
+            <strong>Grok Generated DFA</strong>
+            <button id="btn-ai-load" class="btn btn-primary btn-sm">Load into Simulator →</button>
+          </div>
+          <div class="ai-explanation-box">
+            <strong>Explanation:</strong>
+            <p id="ai-explanation-text"></p>
+          </div>
+          <div class="ai-dfa-preview">
+            <div class="ai-preview-col">
+              <strong>States Q:</strong> <span id="ai-preview-states"></span><br>
+              <strong>Alphabet Σ:</strong> <span id="ai-preview-alphabet"></span><br>
+              <strong>Start:</strong> <span id="ai-preview-start"></span> &nbsp;
+              <strong>Accepting F:</strong> <span id="ai-preview-accepting"></span>
+            </div>
+            <div class="ai-preview-samples">
+              <strong>Sample inputs:</strong>
+              <div id="ai-sample-chips" class="sample-chips"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- AI Error Panel -->
+        <div id="ai-error-panel" class="alert-box hidden ai-error">
+          <div class="alert-icon">⚠️</div>
+          <div class="alert-content">
+            <strong>AI Error</strong>
+            <p id="ai-error-text"></p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="app-footer">
+    <div class="footer-container">
+      <p>CSET302: Automata Theory and Computability — DFA Simulator Project</p>
+      <p class="footer-sub">Simple, Clean, Interactive Automata Simulator</p>
+    </div>
+  </footer>
+
+  <!-- Application Logic -->
+  <script src="/static/app.js"></script>
+</body>
+</html>
